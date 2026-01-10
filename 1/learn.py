@@ -77,13 +77,35 @@ def cross_entropy_error(y, t):
 
 def numerical_gradient(f, x):
     h = 1e-4
-    return (f(x + h) - f(x - h)) / (2 * h)
+    grad = np.zeros_like(x)
+
+    for idx in range(x.size):
+        tmp_val = x[idx]
+        x[idx] = tmp_val + h
+        fxh1 = f(x)
+
+        x[idx] = tmp_val - h
+        fxh2 = f(x)
+        grad[idx] = (fxh1 - fxh2) / (2*h)
+        x[idx] = tmp_val
+
+    return grad
+
+def gradient_descent(f, init_x, lr=0.01, step_num=100):
+    x = init_x
+    x_history = []
+    for i in range(step_num):
+        x_history.append( x.copy() )
+        grad = numerical_gradient(f, x)
+        x -= lr * grad
+    return x, np.array(x_history)
 
 def func_1(x):
     return 0.01*x**2 + x**2
 
 def func_2(x):
     return x[0]**2 + x[1]**2
+
 
 if __name__ == "__main__":
     # x = np.array([-5.0, 5.0, 0.1])
@@ -132,33 +154,33 @@ if __name__ == "__main__":
     # logger.info("Accuracy:" + str(float(accuracy_cnt) / len(x)))
 
     # 生成连续的点进行测试
-    x0 = np.arange(-5, 5, 0.1)
-    x1 = np.arange(-5, 5, 0.1)
-    X, Y = np.meshgrid(x0, x1)
+    # x0 = np.arange(-5, 5, 0.1)
+    # x1 = np.arange(-5, 5, 0.1)
+    # X, Y = np.meshgrid(x0, x1)
     
-    # 计算函数值
-    Z = X**2 + Y**2
+    # # 计算函数值
+    # Z = X**2 + Y**2
     
-    # 绘制等高线图
-    plt.figure(figsize=(10, 8))
-    plt.subplot(1, 2, 1)
-    contour = plt.contour(X, Y, Z)
-    plt.clabel(contour, inline=True, fontsize=8)
-    plt.xlabel('x0')
-    plt.ylabel('x1')
-    plt.title('func_2(x) = x0^2 + x1^2 等高线图')
-    plt.colorbar(contour)
+    # # 绘制等高线图
+    # plt.figure(figsize=(10, 8))
+    # plt.subplot(1, 2, 1)
+    # contour = plt.contour(X, Y, Z)
+    # plt.clabel(contour, inline=True, fontsize=8)
+    # plt.xlabel('x0')
+    # plt.ylabel('x1')
+    # plt.title('func_2(x) = x0^2 + x1^2 等高线图')
+    # plt.colorbar(contour)
     
-    # 绘制3D曲面图
-    ax = plt.subplot(1, 2, 2, projection='3d')
-    ax.plot_surface(X, Y, Z, cmap='viridis')
-    ax.set_xlabel('x0')
-    ax.set_ylabel('x1')
-    ax.set_zlabel('func_2(x)')
-    ax.set_title('func_2(x) 三维曲面')
+    # # 绘制3D曲面图
+    # ax = plt.subplot(1, 2, 2, projection='3d')
+    # ax.plot_surface(X, Y, Z, cmap='viridis')
+    # ax.set_xlabel('x0')
+    # ax.set_ylabel('x1')
+    # ax.set_zlabel('func_2(x)')
+    # ax.set_title('func_2(x) 三维曲面')
     
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
     
     # 测试几个特定点的梯度
     # print("\n测试特定点的梯度：")
@@ -173,4 +195,18 @@ if __name__ == "__main__":
     #     result = func_2(point)
     #     gradient = numerical_gradient(func_2, point)
     #     print(f"func_2({point}) = {result}, gradient = {gradient}")
+
+    init_x = np.array([3.0, 4.0])
+    result, x_history = gradient_descent(func_2, init_x=init_x, lr=0.2, step_num=100)
+    print(f"通过梯度下降法找到的最小值点: {result}")
+    # 绘制优化路径
+    plt.plot( [-5, 5], [0,0], '--b')
+    plt.plot( [0,0], [-5, 5], '--b')
+    plt.plot(x_history[:, 0], x_history[:, 1], 'o-')
+    plt.xlim(-5, 5)
+    plt.ylim(-5, 5)
+    plt.xlabel("X0")
+    plt.ylabel("X1")
+    plt.title("Gradient Descent Path on func_2(x)")
+    plt.show()
     
