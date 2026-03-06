@@ -1,0 +1,12 @@
+{
+  "player1": {
+    "password": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+    "score": 0,
+    "games_played": 0
+  },
+  "player2": {
+    "password": "c6ba91b90d922e159893f46c387e5dc1b3dc5c101a5a4522f03b987177a24a91",
+    "score": 0,
+    "games_played": 0
+  }
+}
