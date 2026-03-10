@@ -21,9 +21,30 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate.")
     parser.add_argument("--num-classes", type=int, required=True, help="Number of segmentation classes (including background).")
     parser.add_argument("--output", default="model.pth", help="Path to save the trained model.")
-    parser.add_argument("--backbone", choices=["deeplabv3", "unet"], default="deeplabv3", help="Model backbone to use.")
+    parser.add_argument("--backbone", choices=["deeplabv3", "unet", "transformer"], default="deeplabv3", help="Model backbone to use.")
+    parser.add_argument("--weighted-loss", action="store_true", help="Use weighted cross-entropy loss for class imbalance.")
     args = parser.parse_args()
     return args
+
+
+def compute_class_weights(dataset, num_classes):
+    """Compute class weights based on pixel frequency in the dataset."""
+    print("Computing class weights...")
+    class_counts = torch.zeros(num_classes, dtype=torch.float64)
+
+    for _, mask in dataset:
+        # mask is tensor of shape (H, W) with class indices
+        for class_idx in range(num_classes):
+            class_counts[class_idx] += (mask == class_idx).sum().item()
+
+    total_pixels = class_counts.sum()
+    class_weights = total_pixels / (class_counts + 1e-6)  # avoid division by zero
+    class_weights = class_weights / class_weights.sum() * num_classes  # normalize
+
+    print(f"Class counts: {class_counts.tolist()}")
+    print(f"Class weights: {class_weights.tolist()}")
+
+    return class_weights.float()
 
 
 def train_one_epoch(
@@ -67,7 +88,14 @@ def main():
     model = SegmentationModel(num_classes=args.num_classes, backbone=args.backbone)
     model = model.to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    # Compute class weights if requested
+    if args.weighted_loss:
+        class_weights = compute_class_weights(dataset, args.num_classes)
+        class_weights = class_weights.to(device)
+        criterion = nn.CrossEntropyLoss(weight=class_weights)
+    else:
+        criterion = nn.CrossEntropyLoss()
+
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     start_time = time.time()
